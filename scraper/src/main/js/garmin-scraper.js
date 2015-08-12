@@ -7,12 +7,10 @@ var casper = require('casper').create({
             userAgent: 'Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.36'
 
         }
-    })
-    ;
+    });
 
 casper.cli.drop("cli");
 casper.cli.drop("casper-path");
-
 if (casper.cli.args.length === 0 && Object.keys(casper.cli.options).length === 0) {
     casper.echo("Please call with --username and --password!").exit();
 }
@@ -20,16 +18,17 @@ if (casper.cli.args.length === 0 && Object.keys(casper.cli.options).length === 0
 var username = casper.cli.get('username');
 var password = casper.cli.get('password');
 
-
 casper.options.waitTimeout = 3000;
 
 casper.start("https://connect.garmin.com/en-US/signin", function () {
-    casper.capture('after_start.png');
+    casper.viewport(1600, 1200);
+    //casper.wait(1000);
+    //casper.capture('after_start.png');
     this.waitUntilVisible('#gauth-widget-frame', function () {
-        casper.capture('iframe.png');
+        //casper.capture('iframe.png');
         this.withFrame(0, function () {
             this.waitUntilVisible('#login-component', function () {
-                casper.capture('login-component.png');
+                //casper.capture('login-component.png');
                 this.fillSelectors("form#login-form", {
                     'input[name="username"]' : username,
                     'input[name="password"]' : password
@@ -37,11 +36,37 @@ casper.start("https://connect.garmin.com/en-US/signin", function () {
                 this.wait(2000, function(){
                     this.echo('Waited for 2 seconds...');
                 });
-                casper.capture('success.png');
+                //casper.capture('success.png');
             });
         });
     }, function timeout() {
-        this.capture('failed-iframe.png');
+        this.capture('timeout-failed.png');
+    });
+
+
+    this.thenOpen('https://connect.garmin.com/modern/activities', function(){
+        //casper.capture('activities.png');
+        this.waitUntilVisible('#iFrameWidget-0', function(){
+            casper.capture('iFrameWidget-0.png');
+            this.withFrame(0, function(){
+                //require('utils').dump(this.getElementInfo('.activityNameLink'));
+                this.waitUntilVisible('.activityNameLink', function(){
+                    casper.capture('activities2.png');
+                    this.thenClick('a.activityNameLink', function(){
+                        this.waitUntilVisible('.icon-gear', function(){
+                            casper.capture('gear.png');
+                        }, function () {
+                            casper.capture('gear-failed.png');
+                        });
+                        casper.capture('psot-click.png');
+                    })
+                }, function timeout() {
+                    this.capture('activityNameLink-failed.png');
+                });
+            });
+        }, function timeout() {
+            this.capture('iFrameWidget-0-failed.png');
+        });
     });
 });
 
